@@ -8,6 +8,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { MessageBubble } from './MessageBubble';
 import { GiftSelector } from './GiftSelector';
 import { GiftAnimation } from './GiftAnimation';
+import { ImageViewer } from './ImageViewer';
 import { User, Message } from '@/pages/Index';
 import { Send, Gift, Image, X } from 'lucide-react';
 
@@ -19,6 +20,7 @@ interface ChatInterfaceProps {
   title: string;
   onTyping?: (isTyping: boolean) => void;
   otherUserTyping?: boolean;
+  onMessageRead?: (messageId: string) => void;
 }
 
 export const ChatInterface: React.FC<ChatInterfaceProps> = ({
@@ -29,12 +31,14 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   title,
   onTyping,
   otherUserTyping = false,
+  onMessageRead,
 }) => {
   const [inputText, setInputText] = useState('');
   const [showGifts, setShowGifts] = useState(false);
   const [giftAnimation, setGiftAnimation] = useState<{ type: 'kiss' | 'angry', show: boolean } | null>(null);
   const [readMessages, setReadMessages] = useState<Set<string>>(new Set());
   const [chatBackground, setChatBackground] = useState<string>('');
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
@@ -52,6 +56,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     messages.forEach(message => {
       if (message.senderId !== currentUser.id) {
         newReadMessages.add(message.id);
+        if (onMessageRead) {
+          onMessageRead(message.id);
+        }
       }
     });
     setReadMessages(newReadMessages);
@@ -130,6 +137,23 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     setShowGifts(false);
   };
 
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const result = e.target?.result as string;
+        onSendMessage({
+          senderId: currentUser.id,
+          text: 'Image',
+          type: 'image',
+          imageUrl: result,
+        });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       handleSendMessage();
@@ -155,18 +179,18 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   return (
     <div className="relative">
       <Card className="h-[700px] flex flex-col shadow-xl bg-white border-0 rounded-3xl overflow-hidden">
-        {/* Header */}
-        <CardHeader className="bg-[#075E54] text-white p-4 rounded-t-3xl">
+        {/* Header - Fixed at top */}
+        <CardHeader className="bg-[#075E54] text-white p-4 rounded-t-3xl flex-shrink-0 sticky top-0 z-10">
           <CardTitle className="flex items-center gap-3 justify-between">
             <div className="flex items-center gap-3">
               <Avatar className="w-12 h-12 ring-2 ring-white">
-                <AvatarImage src={currentUser.avatar} alt={currentUser.name} />
+                <AvatarImage src={otherUser.avatar} alt={otherUser.name} />
                 <AvatarFallback className="bg-gray-300 text-gray-700 font-semibold">
-                  {currentUser.name.charAt(0)}
+                  {otherUser.name.charAt(0)}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1">
-                <div className="font-semibold text-lg">{title}</div>
+                <div className="font-semibold text-lg">{otherUser.name}</div>
                 <div className="text-sm opacity-90">
                   {otherUserTyping ? (
                     <span className="flex items-center gap-1">
@@ -205,10 +229,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
           </CardTitle>
         </CardHeader>
 
-        <CardContent className="flex-1 flex flex-col p-0 relative">
+        <CardContent className="flex-1 flex flex-col p-0 relative overflow-hidden">
           {/* Messages Area with proper ScrollArea */}
           <div className="flex-1 relative">
-            <ScrollArea className="h-full px-4 py-2">
+            <ScrollArea className="h-full">
               <div 
                 className="space-y-1 min-h-full p-4 rounded-2xl"
                 style={{
@@ -229,6 +253,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                     senderName={message.senderId === currentUser.id ? currentUser.name : otherUser.name}
                     senderAvatar={message.senderId === currentUser.id ? currentUser.avatar : otherUser.avatar}
                     isRead={readMessages.has(message.id)}
+                    onImageClick={setSelectedImage}
                   />
                 ))}
                 
@@ -262,8 +287,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
             </div>
           )}
 
-          {/* Input Area */}
-          <div className="p-4 bg-[#F0F0F0] border-t border-gray-200 rounded-b-3xl">
+          {/* Input Area - Fixed at bottom */}
+          <div className="p-4 bg-[#F0F0F0] border-t border-gray-200 rounded-b-3xl flex-shrink-0">
             <div className="flex gap-3 items-end">
               <Button
                 variant="ghost"
@@ -273,6 +298,16 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
               >
                 <Gift className="w-6 h-6" />
               </Button>
+              
+              <label className="cursor-pointer rounded-full w-12 h-12 p-0 text-gray-600 hover:bg-gray-200 flex-shrink-0 flex items-center justify-center">
+                <Image className="w-6 h-6" />
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                />
+              </label>
               
               <div className="flex-1 relative">
                 <Input
@@ -300,6 +335,14 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       {/* Gift Animation Overlay */}
       {giftAnimation && giftAnimation.show && (
         <GiftAnimation type={giftAnimation.type} />
+      )}
+
+      {/* Image Viewer */}
+      {selectedImage && (
+        <ImageViewer
+          imageUrl={selectedImage}
+          onClose={() => setSelectedImage(null)}
+        />
       )}
     </div>
   );

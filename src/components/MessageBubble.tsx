@@ -10,6 +10,7 @@ interface MessageBubbleProps {
   senderName: string;
   senderAvatar: string;
   isRead?: boolean;
+  onImageClick?: (imageUrl: string) => void;
 }
 
 export const MessageBubble: React.FC<MessageBubbleProps> = ({
@@ -18,8 +19,25 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
   senderName,
   senderAvatar,
   isRead = false,
+  onImageClick,
 }) => {
   const renderMessageContent = () => {
+    if (message.type === 'image') {
+      return (
+        <div className="relative max-w-xs">
+          <img
+            src={message.imageUrl}
+            alt="Shared image"
+            className="rounded-2xl cursor-pointer hover:opacity-90 transition-opacity max-w-full h-auto"
+            onClick={() => onImageClick && onImageClick(message.imageUrl!)}
+          />
+          {message.text !== 'Image' && (
+            <div className="mt-2 text-sm">{message.text}</div>
+          )}
+        </div>
+      );
+    }
+
     if (message.type === 'gift') {
       const emojiMap = {
         kiss: '💋',
@@ -90,7 +108,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
               isOwn
                 ? 'bg-[#DCF8C6] text-gray-800 rounded-br-lg'
                 : 'bg-white border border-gray-200 text-gray-800 rounded-bl-lg'
-            } ${message.type === 'money' ? 'p-2' : ''}`}
+            } ${message.type === 'money' ? 'p-2' : ''} ${message.type === 'image' ? 'p-2' : ''}`}
           >
             {renderMessageContent()}
             

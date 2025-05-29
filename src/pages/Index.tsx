@@ -17,9 +17,11 @@ export interface Message {
   senderId: string;
   text: string;
   timestamp: Date;
-  type: 'text' | 'gift' | 'money';
+  type: 'text' | 'gift' | 'money' | 'image';
   giftType?: string;
   amount?: number;
+  imageUrl?: string;
+  isRead?: boolean;
 }
 
 const Index = () => {
@@ -31,14 +33,25 @@ const Index = () => {
   const [chatBackground, setChatBackground] = useState('bg-gradient-to-br from-gray-50 to-gray-100');
   const [user1Typing, setUser1Typing] = useState(false);
   const [user2Typing, setUser2Typing] = useState(false);
+  const [readMessages, setReadMessages] = useState<Set<string>>(new Set());
 
   const addMessage = (message: Omit<Message, 'id' | 'timestamp'>) => {
     const newMessage: Message = {
       ...message,
       id: Date.now().toString(),
       timestamp: new Date(),
+      isRead: false,
     };
     setMessages(prev => [...prev, newMessage]);
+  };
+
+  const handleMessageRead = (messageId: string) => {
+    setReadMessages(prev => new Set([...prev, messageId]));
+    setMessages(prev => 
+      prev.map(msg => 
+        msg.id === messageId ? { ...msg, isRead: true } : msg
+      )
+    );
   };
 
   const isSetupComplete = user1.name && user2.name;
@@ -101,6 +114,7 @@ const Index = () => {
             title={`${user1.name}'s Chat`}
             onTyping={setUser1Typing}
             otherUserTyping={user2Typing}
+            onMessageRead={handleMessageRead}
           />
           <ChatInterface
             currentUser={user2}
@@ -110,6 +124,7 @@ const Index = () => {
             title={`${user2.name}'s Chat`}
             onTyping={setUser2Typing}
             otherUserTyping={user1Typing}
+            onMessageRead={handleMessageRead}
           />
         </div>
       </div>
