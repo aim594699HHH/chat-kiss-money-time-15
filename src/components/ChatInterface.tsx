@@ -62,16 +62,20 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         
         // Show animation for gifts received from other user
         if (message.type === 'gift' && ['kiss', 'angry', 'laugh', 'heart'].includes(message.giftType || '')) {
-          setGiftAnimation({ 
-            type: message.giftType as 'kiss' | 'angry', 
-            show: true, 
-            fromOther: true 
-          });
+          // إعادة تعيين الأنيميشن لكل هدية جديدة
+          setGiftAnimation(null);
+          setTimeout(() => {
+            setGiftAnimation({ 
+              type: message.giftType as 'kiss' | 'angry', 
+              show: true, 
+              fromOther: true 
+            });
+          }, 100);
         }
       }
     });
     setReadMessages(newReadMessages);
-  }, [messages]);
+  }, [messages, currentUser.id, onMessageRead, readMessages]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setInputText(e.target.value);
@@ -192,6 +196,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   };
 
   const handleGiftAnimationComplete = () => {
+    console.log('Gift animation completed, hiding...');
     setGiftAnimation(null);
   };
 
