@@ -10,7 +10,7 @@ import { GiftSelector } from './GiftSelector';
 import { GiftAnimation } from './GiftAnimation';
 import { ImageViewer } from './ImageViewer';
 import { User, Message } from '@/pages/Index';
-import { Send, Gift, Image, X } from 'lucide-react';
+import { Send, Gift, Image, X, Video, Phone } from 'lucide-react';
 
 interface ChatInterfaceProps {
   currentUser: User;
@@ -35,10 +35,11 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
 }) => {
   const [inputText, setInputText] = useState('');
   const [showGifts, setShowGifts] = useState(false);
-  const [giftAnimation, setGiftAnimation] = useState<{ type: 'kiss' | 'angry', show: boolean } | null>(null);
+  const [giftAnimation, setGiftAnimation] = useState<{ type: 'kiss' | 'angry', show: boolean, fromOther: boolean } | null>(null);
   const [readMessages, setReadMessages] = useState<Set<string>>(new Set());
   const [chatBackground, setChatBackground] = useState<string>('');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
@@ -58,6 +59,18 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         newReadMessages.add(message.id);
         if (onMessageRead) {
           onMessageRead(message.id);
+        }
+        
+        // Show animation for gifts received from other user
+        if (message.type === 'gift' && ['kiss', 'angry', 'laugh', 'heart'].includes(message.giftType || '')) {
+          setGiftAnimation({ 
+            type: message.giftType as 'kiss' | 'angry', 
+            show: true, 
+            fromOther: true 
+          });
+          setTimeout(() => {
+            setGiftAnimation(null);
+          }, 2000);
         }
       }
     });
@@ -108,14 +121,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   };
 
   const handleSendGift = (giftType: string, amount?: number) => {
-    // Show animation for emotional stickers
-    if (['kiss', 'angry', 'laugh', 'heart'].includes(giftType)) {
-      setGiftAnimation({ type: giftType as 'kiss' | 'angry', show: true });
-      setTimeout(() => {
-        setGiftAnimation(null);
-      }, 2000);
-    }
-
     const giftMessages = {
       kiss: '💋 Sent a kiss!',
       angry: '😡 Is angry!',
@@ -140,6 +145,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
+      setIsUploading(true);
       const reader = new FileReader();
       reader.onload = (e) => {
         const result = e.target?.result as string;
@@ -149,8 +155,11 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
           type: 'image',
           imageUrl: result,
         });
+        setIsUploading(false);
       };
       reader.readAsDataURL(file);
+      // Reset the input value to prevent flickering
+      event.target.value = '';
     }
   };
 
@@ -174,6 +183,16 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
   const removeChatBackground = () => {
     setChatBackground('');
+  };
+
+  const handleVideoCall = () => {
+    console.log(`Starting video call with ${otherUser.name}`);
+    // Add video call logic here
+  };
+
+  const handleVoiceCall = () => {
+    console.log(`Starting voice call with ${otherUser.name}`);
+    // Add voice call logic here
   };
 
   return (
@@ -206,6 +225,22 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
               </div>
             </div>
             <div className="flex gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleVoiceCall}
+                className="p-2 hover:bg-white/10 rounded-full transition-colors"
+              >
+                <Phone className="w-5 h-5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleVideoCall}
+                className="p-2 hover:bg-white/10 rounded-full transition-colors"
+              >
+                <Video className="w-5 h-5" />
+              </Button>
               <label className="cursor-pointer p-2 hover:bg-white/10 rounded-full transition-colors">
                 <Image className="w-5 h-5" />
                 <input
@@ -272,6 +307,18 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                     </div>
                   </div>
                 )}
+                
+                {isUploading && (
+                  <div className="flex justify-end mb-4">
+                    <div className="bg-[#DCF8C6] rounded-2xl px-4 py-3 shadow-sm">
+                      <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
+                        <span className="text-sm text-gray-600">Uploading image...</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
                 <div ref={messagesEndRef} />
               </div>
             </ScrollArea>
@@ -289,7 +336,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
           {/* Input Area - Fixed at bottom */}
           <div className="p-4 bg-[#F0F0F0] border-t border-gray-200 rounded-b-3xl flex-shrink-0">
-            <div className="flex gap-3 items-end">
+            <div className="flex gap-3 items-end relative">
               <Button
                 variant="ghost"
                 size="sm"
@@ -316,13 +363,13 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                   onChange={handleInputChange}
                   onKeyPress={handleKeyPress}
                   placeholder="Type a message"
-                  className="rounded-full border-0 bg-white shadow-sm pr-14 py-3 px-4 focus:ring-2 focus:ring-[#25D366] text-base"
+                  className="rounded-full border-0 bg-white shadow-sm pr-16 py-3 px-4 focus:ring-2 focus:ring-[#25D366] text-base"
                 />
                 <Button
                   onClick={handleSendMessage}
                   disabled={!inputText.trim()}
                   size="sm"
-                  className="absolute right-2 top-2 rounded-full w-10 h-10 p-0 bg-[#25D366] hover:bg-[#128C7E] disabled:bg-gray-300 transition-colors"
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 rounded-full w-10 h-10 p-0 bg-[#25D366] hover:bg-[#128C7E] disabled:bg-gray-300 transition-colors z-10"
                 >
                   <Send className="w-5 h-5" />
                 </Button>
@@ -332,8 +379,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         </CardContent>
       </Card>
 
-      {/* Gift Animation Overlay */}
-      {giftAnimation && giftAnimation.show && (
+      {/* Gift Animation Overlay - Only show for received gifts */}
+      {giftAnimation && giftAnimation.show && giftAnimation.fromOther && (
         <GiftAnimation type={giftAnimation.type} />
       )}
 

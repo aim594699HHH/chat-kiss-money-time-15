@@ -12,11 +12,11 @@ export const GiftAnimation: React.FC<GiftAnimationProps> = ({ type }) => {
   useEffect(() => {
     setVisible(true);
     
-    // Generate random particles
+    // Generate random particles positioned towards the left side (recipient's side)
     const newParticles = Array.from({ length: 8 }, (_, i) => ({
       id: i,
-      x: Math.random() * 100,
-      y: Math.random() * 100,
+      x: Math.random() * 30 + 10, // Position on left side (10-40% from left)
+      y: Math.random() * 40 + 30, // Center vertically (30-70% from top)
       delay: Math.random() * 0.5,
     }));
     setParticles(newParticles);
@@ -34,9 +34,9 @@ export const GiftAnimation: React.FC<GiftAnimationProps> = ({ type }) => {
   if (!visible) return null;
 
   return (
-    <div className="fixed inset-0 z-50 pointer-events-none flex items-center justify-center">
-      {/* Main animation */}
-      <div className="relative">
+    <div className="fixed inset-0 z-50 pointer-events-none">
+      {/* Main animation positioned on the left side */}
+      <div className="absolute left-1/4 top-1/2 transform -translate-y-1/2">
         <div className={`text-8xl animate-[scaleUp_1.5s_ease-out] ${visible ? 'animate-bounce' : ''}`}>
           {emoji}
         </div>
@@ -57,13 +57,13 @@ export const GiftAnimation: React.FC<GiftAnimationProps> = ({ type }) => {
         ))}
       </div>
 
-      {/* Background overlay */}
-      <div className={`absolute inset-0 bg-gradient-to-br ${bgColor} opacity-20 animate-pulse`} />
+      {/* Background overlay - subtle */}
+      <div className={`absolute inset-0 bg-gradient-to-br ${bgColor} opacity-10 animate-pulse`} />
       
-      {/* Ripple effect */}
-      <div className="absolute inset-0 flex items-center justify-center">
-        <div className="w-32 h-32 border-4 border-white rounded-full animate-[ripple_1.5s_ease-out]" />
-        <div className="absolute w-24 h-24 border-2 border-white rounded-full animate-[ripple_1.5s_ease-out_0.3s]" />
+      {/* Ripple effect positioned on the left */}
+      <div className="absolute left-1/4 top-1/2 transform -translate-y-1/2">
+        <div className="w-32 h-32 border-4 border-white rounded-full animate-[ripple_1.5s_ease-out] opacity-50" />
+        <div className="absolute top-4 left-4 w-24 h-24 border-2 border-white rounded-full animate-[ripple_1.5s_ease-out_0.3s] opacity-30" />
       </div>
     </div>
   );
