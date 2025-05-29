@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -68,9 +67,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
             show: true, 
             fromOther: true 
           });
-          setTimeout(() => {
-            setGiftAnimation(null);
-          }, 2000);
         }
       }
     });
@@ -193,6 +189,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const handleVoiceCall = () => {
     console.log(`Starting voice call with ${otherUser.name}`);
     // Add voice call logic here
+  };
+
+  const handleGiftAnimationComplete = () => {
+    setGiftAnimation(null);
   };
 
   return (
@@ -381,7 +381,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
       {/* Gift Animation Overlay - Only show for received gifts */}
       {giftAnimation && giftAnimation.show && giftAnimation.fromOther && (
-        <GiftAnimation type={giftAnimation.type} />
+        <GiftAnimation 
+          type={giftAnimation.type} 
+          onComplete={handleGiftAnimationComplete}
+        />
       )}
 
       {/* Image Viewer */}
