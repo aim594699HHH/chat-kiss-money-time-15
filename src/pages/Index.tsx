@@ -70,8 +70,9 @@ const Index = () => {
 
   return (
     <div className={`min-h-screen ${chatBackground} transition-all duration-500`}>
-      <div className="container mx-auto p-4 max-w-7xl">
-        <div className="flex justify-between items-center mb-6">
+      <div className="container mx-auto p-2 md:p-4 max-w-7xl h-screen flex flex-col">
+        {/* Header - Hidden on mobile for full screen experience */}
+        <div className="hidden md:flex justify-between items-center mb-6">
           <div>
             <h1 className="text-4xl font-bold text-gray-800 mb-2">WhatsApp Style Chat</h1>
             <p className="text-gray-600 text-lg">Chat between {user1.name} and {user2.name}</p>
@@ -97,6 +98,29 @@ const Index = () => {
           </div>
         </div>
 
+        {/* Mobile Header - Compact */}
+        <div className="md:hidden flex justify-between items-center mb-2 px-2">
+          <h1 className="text-lg font-bold text-gray-800">{user1.name} & {user2.name}</h1>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowBackgroundSelector(!showBackgroundSelector)}
+              className="border-2 text-xs px-2 py-1"
+            >
+              <Settings className="w-3 h-3" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowSetup(true)}
+              className="border-2 text-xs px-2 py-1"
+            >
+              Edit
+            </Button>
+          </div>
+        </div>
+
         {showBackgroundSelector && (
           <BackgroundSelector
             currentBackground={chatBackground}
@@ -105,27 +129,32 @@ const Index = () => {
           />
         )}
 
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-          <ChatInterface
-            currentUser={user1}
-            otherUser={user2}
-            messages={messages}
-            onSendMessage={addMessage}
-            title={`${user1.name}'s Chat`}
-            onTyping={setUser1Typing}
-            otherUserTyping={user2Typing}
-            onMessageRead={handleMessageRead}
-          />
-          <ChatInterface
-            currentUser={user2}
-            otherUser={user1}
-            messages={messages}
-            onSendMessage={addMessage}
-            title={`${user2.name}'s Chat`}
-            onTyping={setUser2Typing}
-            otherUserTyping={user1Typing}
-            onMessageRead={handleMessageRead}
-          />
+        {/* Chat Grid - Full screen on mobile */}
+        <div className="flex-1 grid grid-cols-1 xl:grid-cols-2 gap-2 md:gap-8 min-h-0">
+          <div className="min-h-0">
+            <ChatInterface
+              currentUser={user1}
+              otherUser={user2}
+              messages={messages}
+              onSendMessage={addMessage}
+              title={`${user1.name}'s Chat`}
+              onTyping={setUser1Typing}
+              otherUserTyping={user2Typing}
+              onMessageRead={handleMessageRead}
+            />
+          </div>
+          <div className="min-h-0 hidden xl:block">
+            <ChatInterface
+              currentUser={user2}
+              otherUser={user1}
+              messages={messages}
+              onSendMessage={addMessage}
+              title={`${user2.name}'s Chat`}
+              onTyping={setUser2Typing}
+              otherUserTyping={user1Typing}
+              onMessageRead={handleMessageRead}
+            />
+          </div>
         </div>
       </div>
     </div>

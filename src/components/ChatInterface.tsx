@@ -235,7 +235,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
   return (
     <div className="relative h-full">
-      <Card className="h-[700px] flex flex-col shadow-xl bg-white border-0 rounded-3xl overflow-hidden">
+      <Card className="h-full flex flex-col shadow-xl bg-white border-0 rounded-none md:rounded-3xl overflow-hidden">
         <ChatHeader
           otherUser={otherUser}
           otherUserTyping={otherUserTyping}
