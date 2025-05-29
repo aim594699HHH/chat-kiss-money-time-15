@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { ChatHeader } from './ChatHeader';
@@ -39,13 +38,21 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const inputRef = useRef<HTMLInputElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
 
+  // Enhanced scroll management with better stability
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (messagesEndRef.current) {
+      // Use requestAnimationFrame for smoother scrolling
+      requestAnimationFrame(() => {
+        messagesEndRef.current?.scrollIntoView({ 
+          behavior: 'smooth',
+          block: 'end',
+          inline: 'nearest'
+        });
+      });
+    }
   };
 
   useEffect(() => {
-    scrollToBottom();
-    
     // Mark messages as read when they appear
     const newReadMessages = new Set(readMessages);
     
@@ -59,6 +66,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     });
     
     setReadMessages(newReadMessages);
+    
+    // Debounced scroll to bottom
+    const timeoutId = setTimeout(scrollToBottom, 100);
+    return () => clearTimeout(timeoutId);
   }, [messages, currentUser.id, onMessageRead]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -184,7 +195,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   };
 
   return (
-    <div className="relative">
+    <div className="relative h-full">
       <Card className="h-[700px] flex flex-col shadow-xl bg-white border-0 rounded-3xl overflow-hidden">
         <ChatHeader
           otherUser={otherUser}
@@ -209,9 +220,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
             onImageClick={setSelectedImage}
           />
 
-          {/* Gift Selector */}
+          {/* Gift Selector - Fixed positioning */}
           {showGifts && (
-            <div className="absolute bottom-20 left-0 right-0 z-10">
+            <div className="absolute bottom-20 left-0 right-0 z-20 mx-4">
               <GiftSelector
                 onSendGift={handleSendGift}
                 onClose={() => setShowGifts(false)}
@@ -231,7 +242,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         </CardContent>
       </Card>
 
-      {/* Image Viewer */}
+      {/* Image Viewer - Fixed positioning */}
       {selectedImage && (
         <ImageViewer
           imageUrl={selectedImage}

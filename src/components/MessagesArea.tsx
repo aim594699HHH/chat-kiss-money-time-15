@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { MessageBubble } from './MessageBubble';
@@ -28,11 +28,28 @@ export const MessagesArea: React.FC<MessagesAreaProps> = ({
   messagesEndRef,
   onImageClick,
 }) => {
+  // Auto-scroll to bottom when new messages arrive, but maintain smooth scrolling
+  useEffect(() => {
+    const scrollToBottom = () => {
+      if (messagesEndRef.current) {
+        messagesEndRef.current.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'end',
+          inline: 'nearest'
+        });
+      }
+    };
+
+    // Small delay to ensure DOM has updated
+    const timeoutId = setTimeout(scrollToBottom, 50);
+    return () => clearTimeout(timeoutId);
+  }, [messages.length, otherUserTyping, isUploading]);
+
   return (
-    <div className="flex-1 relative">
+    <div className="flex-1 relative overflow-hidden">
       <ScrollArea className="h-full">
         <div 
-          className="space-y-1 min-h-full p-4 rounded-2xl"
+          className="space-y-1 p-4 rounded-2xl will-change-scroll"
           style={{
             backgroundColor: chatBackground ? 'transparent' : '#E5DDD5',
             backgroundImage: chatBackground 
@@ -40,7 +57,10 @@ export const MessagesArea: React.FC<MessagesAreaProps> = ({
               : `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23f0f0f0' fill-opacity='0.05'%3E%3Cpath d='M30 30c0-11.046-8.954-20-20-20s-20 8.954-20 20 8.954 20 20 20 20-8.954 20-20zm0 0c0 11.046 8.954 20 20 20s20-8.954 20-20-8.954-20-20-20-20 8.954-20 20z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
             backgroundSize: chatBackground ? 'cover' : '60px 60px',
             backgroundPosition: 'center',
-            backgroundRepeat: chatBackground ? 'no-repeat' : 'repeat'
+            backgroundRepeat: chatBackground ? 'no-repeat' : 'repeat',
+            backgroundAttachment: 'local',
+            minHeight: '100%',
+            paddingBottom: '2rem'
           }}
         >
           {messages.map((message) => (
@@ -82,7 +102,7 @@ export const MessagesArea: React.FC<MessagesAreaProps> = ({
             </div>
           )}
           
-          <div ref={messagesEndRef} />
+          <div ref={messagesEndRef} className="h-1" />
         </div>
       </ScrollArea>
     </div>
