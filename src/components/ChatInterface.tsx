@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { MessageBubble } from './MessageBubble';
 import { GiftSelector } from './GiftSelector';
 import { GiftAnimation } from './GiftAnimation';
@@ -32,9 +33,11 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const [inputText, setInputText] = useState('');
   const [showGifts, setShowGifts] = useState(false);
   const [giftAnimation, setGiftAnimation] = useState<{ type: 'kiss' | 'angry', show: boolean } | null>(null);
+  const [readMessages, setReadMessages] = useState<Set<string>>(new Set());
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -42,13 +45,22 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
   useEffect(() => {
     scrollToBottom();
+    
+    // Mark messages as read when they appear
+    const newReadMessages = new Set(readMessages);
+    messages.forEach(message => {
+      if (message.senderId !== currentUser.id) {
+        newReadMessages.add(message.id);
+      }
+    });
+    setReadMessages(newReadMessages);
   }, [messages]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setInputText(e.target.value);
     
-    // Trigger typing indicator
-    if (onTyping) {
+    // Trigger typing indicator immediately when user starts typing
+    if (onTyping && e.target.value.length > 0) {
       onTyping(true);
       
       // Clear existing timeout
@@ -60,6 +72,11 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       typingTimeoutRef.current = setTimeout(() => {
         onTyping(false);
       }, 1000);
+    } else if (onTyping && e.target.value.length === 0) {
+      onTyping(false);
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
     }
   };
 
@@ -82,19 +99,30 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     }
   };
 
-  const handleSendGift = (giftType: 'kiss' | 'angry', amount?: number) => {
-    // Show animation
-    setGiftAnimation({ type: giftType, show: true });
-    
-    // Hide animation after 2 seconds
-    setTimeout(() => {
-      setGiftAnimation(null);
-    }, 2000);
+  const handleSendGift = (giftType: string, amount?: number) => {
+    // Show animation for emotional stickers
+    if (['kiss', 'angry', 'laugh', 'heart'].includes(giftType)) {
+      setGiftAnimation({ type: giftType as 'kiss' | 'angry', show: true });
+      setTimeout(() => {
+        setGiftAnimation(null);
+      }, 2000);
+    }
+
+    const giftMessages = {
+      kiss: '💋 Sent a kiss!',
+      angry: '😡 Is angry!',
+      laugh: '😂 Is laughing!',
+      heart: '❤️ Sent love!',
+      thumbsUp: '👍 Liked!',
+      fire: '🔥 That\'s hot!',
+      clap: '👏 Applauding!',
+      surprise: '😮 Surprised!'
+    };
 
     onSendMessage({
       senderId: currentUser.id,
-      text: giftType === 'kiss' ? '💋 Sent a kiss!' : '😡 Is angry!',
-      type: giftType === 'kiss' && amount ? 'money' : 'gift',
+      text: giftMessages[giftType as keyof typeof giftMessages] || '💋 Sent a gift!',
+      type: amount ? 'money' : 'gift',
       giftType,
       amount,
     });
@@ -109,62 +137,76 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
   return (
     <div className="relative">
-      <Card className="h-[600px] flex flex-col shadow-lg bg-white border-0">
+      <Card className="h-[700px] flex flex-col shadow-xl bg-white border-0 rounded-2xl overflow-hidden">
         {/* Header */}
-        <CardHeader className="bg-[#075E54] text-white p-3 rounded-t-lg">
+        <CardHeader className="bg-[#075E54] text-white p-4 rounded-t-2xl">
           <CardTitle className="flex items-center gap-3">
-            <Avatar className="w-10 h-10 ring-2 ring-white">
+            <Avatar className="w-12 h-12 ring-2 ring-white">
               <AvatarImage src={currentUser.avatar} alt={currentUser.name} />
-              <AvatarFallback className="bg-gray-300">{currentUser.name.charAt(0)}</AvatarFallback>
+              <AvatarFallback className="bg-gray-300 text-gray-700 font-semibold">
+                {currentUser.name.charAt(0)}
+              </AvatarFallback>
             </Avatar>
             <div className="flex-1">
-              <div className="font-semibold text-base">{title}</div>
+              <div className="font-semibold text-lg">{title}</div>
               <div className="text-sm opacity-90">
-                {otherUserTyping ? 'typing...' : 'online'}
+                {otherUserTyping ? (
+                  <span className="flex items-center gap-1">
+                    typing
+                    <div className="flex gap-1">
+                      <div className="w-1 h-1 bg-white rounded-full animate-bounce"></div>
+                      <div className="w-1 h-1 bg-white rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                      <div className="w-1 h-1 bg-white rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                    </div>
+                  </span>
+                ) : 'online'}
               </div>
             </div>
           </CardTitle>
         </CardHeader>
 
         <CardContent className="flex-1 flex flex-col p-0 relative">
-          {/* Messages Area */}
-          <div 
-            className="flex-1 overflow-y-auto p-4 space-y-1 bg-[#E5DDD5] bg-opacity-30"
-            style={{
-              backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23f0f0f0' fill-opacity='0.1'%3E%3Cpath d='M30 30c0-11.046-8.954-20-20-20s-20 8.954-20 20 8.954 20 20 20 20-8.954 20-20zm0 0c0 11.046 8.954 20 20 20s20-8.954 20-20-8.954-20-20-20-20 8.954-20 20z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
-            }}
-          >
-            {messages.map((message) => (
-              <MessageBubble
-                key={message.id}
-                message={message}
-                isOwn={message.senderId === currentUser.id}
-                senderName={message.senderId === currentUser.id ? currentUser.name : otherUser.name}
-                senderAvatar={message.senderId === currentUser.id ? currentUser.avatar : otherUser.avatar}
-              />
-            ))}
-            
-            {otherUserTyping && (
-              <div className="flex items-center gap-2 animate-fade-in">
-                <Avatar className="w-6 h-6">
-                  <AvatarImage src={otherUser.avatar} alt={otherUser.name} />
-                  <AvatarFallback className="text-xs bg-gray-300">{otherUser.name.charAt(0)}</AvatarFallback>
-                </Avatar>
-                <div className="bg-white rounded-2xl px-4 py-2 shadow-sm border border-gray-200">
-                  <div className="flex gap-1">
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+          {/* Messages Area with ScrollArea */}
+          <ScrollArea className="flex-1 px-4 py-2" ref={scrollAreaRef}>
+            <div 
+              className="space-y-1 min-h-full bg-[#E5DDD5] bg-opacity-30 p-2 rounded-lg"
+              style={{
+                backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23f0f0f0' fill-opacity='0.05'%3E%3Cpath d='M30 30c0-11.046-8.954-20-20-20s-20 8.954-20 20 8.954 20 20 20 20-8.954 20-20zm0 0c0 11.046 8.954 20 20 20s20-8.954 20-20-8.954-20-20-20-20 8.954-20 20z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
+              }}
+            >
+              {messages.map((message) => (
+                <MessageBubble
+                  key={message.id}
+                  message={message}
+                  isOwn={message.senderId === currentUser.id}
+                  senderName={message.senderId === currentUser.id ? currentUser.name : otherUser.name}
+                  senderAvatar={message.senderId === currentUser.id ? currentUser.avatar : otherUser.avatar}
+                  isRead={readMessages.has(message.id)}
+                />
+              ))}
+              
+              {otherUserTyping && (
+                <div className="flex items-center gap-2 animate-fade-in mb-4">
+                  <Avatar className="w-8 h-8">
+                    <AvatarImage src={otherUser.avatar} alt={otherUser.name} />
+                    <AvatarFallback className="text-xs bg-gray-300">{otherUser.name.charAt(0)}</AvatarFallback>
+                  </Avatar>
+                  <div className="bg-white rounded-2xl px-4 py-3 shadow-sm border border-gray-200">
+                    <div className="flex gap-1">
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
-            <div ref={messagesEndRef} />
-          </div>
+              )}
+              <div ref={messagesEndRef} />
+            </div>
+          </ScrollArea>
 
           {/* Gift Selector */}
           {showGifts && (
-            <div className="absolute bottom-16 left-0 right-0 z-10">
+            <div className="absolute bottom-20 left-0 right-0 z-10">
               <GiftSelector
                 onSendGift={handleSendGift}
                 onClose={() => setShowGifts(false)}
@@ -173,15 +215,15 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
           )}
 
           {/* Input Area */}
-          <div className="p-3 bg-[#F0F0F0] border-t">
-            <div className="flex gap-2 items-end">
+          <div className="p-4 bg-[#F0F0F0] border-t border-gray-200">
+            <div className="flex gap-3 items-end">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setShowGifts(!showGifts)}
-                className="rounded-full w-10 h-10 p-0 text-gray-600 hover:bg-gray-200"
+                className="rounded-full w-12 h-12 p-0 text-gray-600 hover:bg-gray-200 flex-shrink-0"
               >
-                <Gift className="w-5 h-5" />
+                <Gift className="w-6 h-6" />
               </Button>
               
               <div className="flex-1 relative">
@@ -191,15 +233,15 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                   onChange={handleInputChange}
                   onKeyPress={handleKeyPress}
                   placeholder="Type a message"
-                  className="rounded-full border-0 bg-white shadow-sm pr-12 py-2 px-4 focus:ring-1 focus:ring-[#25D366]"
+                  className="rounded-full border-0 bg-white shadow-sm pr-14 py-3 px-4 focus:ring-2 focus:ring-[#25D366] text-base"
                 />
                 <Button
                   onClick={handleSendMessage}
                   disabled={!inputText.trim()}
                   size="sm"
-                  className="absolute right-1 top-1 rounded-full w-8 h-8 p-0 bg-[#25D366] hover:bg-[#128C7E] disabled:bg-gray-300"
+                  className="absolute right-2 top-2 rounded-full w-10 h-10 p-0 bg-[#25D366] hover:bg-[#128C7E] disabled:bg-gray-300 transition-colors"
                 >
-                  <Send className="w-4 h-4" />
+                  <Send className="w-5 h-5" />
                 </Button>
               </div>
             </div>

@@ -18,7 +18,7 @@ export interface Message {
   text: string;
   timestamp: Date;
   type: 'text' | 'gift' | 'money';
-  giftType?: 'kiss' | 'angry';
+  giftType?: string;
   amount?: number;
 }
 
@@ -60,15 +60,15 @@ const Index = () => {
       <div className="container mx-auto p-4 max-w-7xl">
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h1 className="text-3xl font-bold text-gray-800 mb-1">WhatsApp Style Chat</h1>
-            <p className="text-gray-600">Chat between {user1.name} and {user2.name}</p>
+            <h1 className="text-4xl font-bold text-gray-800 mb-2">WhatsApp Style Chat</h1>
+            <p className="text-gray-600 text-lg">Chat between {user1.name} and {user2.name}</p>
           </div>
           <div className="flex gap-3">
             <Button
               variant="outline"
               size="sm"
               onClick={() => setShowBackgroundSelector(!showBackgroundSelector)}
-              className="border-2 hover:bg-[#25D366] hover:text-white hover:border-[#25D366] transition-colors"
+              className="border-2 hover:bg-[#25D366] hover:text-white hover:border-[#25D366] transition-colors px-4 py-2"
             >
               <Settings className="w-4 h-4 mr-2" />
               Background
@@ -77,7 +77,7 @@ const Index = () => {
               variant="outline"
               size="sm"
               onClick={() => setShowSetup(true)}
-              className="border-2 hover:bg-[#128C7E] hover:text-white hover:border-[#128C7E] transition-colors"
+              className="border-2 hover:bg-[#128C7E] hover:text-white hover:border-[#128C7E] transition-colors px-4 py-2"
             >
               Edit Profiles
             </Button>
@@ -92,7 +92,7 @@ const Index = () => {
           />
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
           <ChatInterface
             currentUser={user1}
             otherUser={user2}
