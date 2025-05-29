@@ -54,6 +54,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     
     // Mark messages as read when they appear
     const newReadMessages = new Set(readMessages);
+    let hasNewGift = false;
+    let latestGiftMessage: Message | null = null;
     
     messages.forEach(message => {
       if (message.senderId !== currentUser.id) {
@@ -62,28 +64,45 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
           onMessageRead(message.id);
         }
         
-        // Show animation for gifts received from other user - only once per message
+        // Check for new gift messages - only process the latest one
         if (message.type === 'gift' && 
             ['kiss', 'angry', 'laugh', 'heart'].includes(message.giftType || '') &&
             !processedGiftMessages.has(message.id)) {
           
-          // Add message ID to processed gifts to prevent showing again
-          setProcessedGiftMessages(prev => new Set([...prev, message.id]));
-          
-          // Reset animation and show new one
-          setGiftAnimation(null);
-          setTimeout(() => {
-            setGiftAnimation({ 
-              type: message.giftType as 'kiss' | 'angry', 
-              show: true, 
-              fromOther: true 
-            });
-          }, 100);
+          hasNewGift = true;
+          latestGiftMessage = message;
         }
       }
     });
+
+    // Only show animation for the latest gift message if there's a new one
+    if (hasNewGift && latestGiftMessage) {
+      // Add ALL new gift messages to processed set to prevent duplicates
+      const newProcessedGifts = new Set(processedGiftMessages);
+      messages.forEach(message => {
+        if (message.type === 'gift' && 
+            message.senderId !== currentUser.id &&
+            ['kiss', 'angry', 'laugh', 'heart'].includes(message.giftType || '')) {
+          newProcessedGifts.add(message.id);
+        }
+      });
+      setProcessedGiftMessages(newProcessedGifts);
+      
+      // Reset any existing animation first
+      setGiftAnimation(null);
+      
+      // Show animation for the latest gift only
+      setTimeout(() => {
+        setGiftAnimation({ 
+          type: latestGiftMessage!.giftType as 'kiss' | 'angry', 
+          show: true, 
+          fromOther: true 
+        });
+      }, 100);
+    }
+    
     setReadMessages(newReadMessages);
-  }, [messages, currentUser.id, onMessageRead]);
+  }, [messages, currentUser.id, onMessageRead, processedGiftMessages]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setInputText(e.target.value);
