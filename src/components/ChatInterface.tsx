@@ -37,6 +37,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
+  const messageObserverRef = useRef<IntersectionObserver | null>(null);
 
   // Enhanced scroll management with better stability
   const scrollToBottom = () => {
@@ -51,6 +52,44 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       });
     }
   };
+
+  // Setup intersection observer to detect when messages come into view
+  useEffect(() => {
+    if (messageObserverRef.current) {
+      messageObserverRef.current.disconnect();
+    }
+
+    messageObserverRef.current = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const messageId = entry.target.getAttribute('data-message-id');
+            const senderId = entry.target.getAttribute('data-sender-id');
+            
+            if (messageId && senderId !== currentUser.id) {
+              // Mark message as read after a short delay (simulating reading time)
+              setTimeout(() => {
+                setReadMessages(prev => new Set([...prev, messageId]));
+                if (onMessageRead) {
+                  onMessageRead(messageId);
+                }
+              }, 500);
+            }
+          }
+        });
+      },
+      {
+        threshold: 0.8, // Message needs to be 80% visible to be marked as read
+        rootMargin: '0px 0px -50px 0px' // Add some margin at the bottom
+      }
+    );
+
+    return () => {
+      if (messageObserverRef.current) {
+        messageObserverRef.current.disconnect();
+      }
+    };
+  }, [currentUser.id, onMessageRead]);
 
   useEffect(() => {
     // Mark messages as read when they appear
@@ -218,6 +257,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
             isUploading={isUploading}
             messagesEndRef={messagesEndRef}
             onImageClick={setSelectedImage}
+            messageObserver={messageObserverRef.current}
           />
 
           {/* Gift Selector - Fixed positioning */}

@@ -15,6 +15,7 @@ interface MessagesAreaProps {
   isUploading: boolean;
   messagesEndRef: React.RefObject<HTMLDivElement>;
   onImageClick: (imageUrl: string) => void;
+  messageObserver?: IntersectionObserver | null;
 }
 
 export const MessagesArea: React.FC<MessagesAreaProps> = ({
@@ -27,6 +28,7 @@ export const MessagesArea: React.FC<MessagesAreaProps> = ({
   isUploading,
   messagesEndRef,
   onImageClick,
+  messageObserver,
 }) => {
   // Auto-scroll to bottom when new messages arrive, but maintain smooth scrolling
   useEffect(() => {
@@ -44,6 +46,22 @@ export const MessagesArea: React.FC<MessagesAreaProps> = ({
     const timeoutId = setTimeout(scrollToBottom, 50);
     return () => clearTimeout(timeoutId);
   }, [messages.length, otherUserTyping, isUploading]);
+
+  // Observe message elements for read status
+  useEffect(() => {
+    if (!messageObserver) return;
+
+    const messageElements = document.querySelectorAll('[data-message-id]');
+    messageElements.forEach(element => {
+      messageObserver.observe(element);
+    });
+
+    return () => {
+      messageElements.forEach(element => {
+        messageObserver.unobserve(element);
+      });
+    };
+  }, [messages, messageObserver]);
 
   return (
     <div className="flex-1 relative overflow-hidden">
@@ -64,15 +82,20 @@ export const MessagesArea: React.FC<MessagesAreaProps> = ({
           }}
         >
           {messages.map((message) => (
-            <MessageBubble
+            <div
               key={message.id}
-              message={message}
-              isOwn={message.senderId === currentUser.id}
-              senderName={message.senderId === currentUser.id ? currentUser.name : otherUser.name}
-              senderAvatar={message.senderId === currentUser.id ? currentUser.avatar : otherUser.avatar}
-              isRead={readMessages.has(message.id)}
-              onImageClick={onImageClick}
-            />
+              data-message-id={message.id}
+              data-sender-id={message.senderId}
+            >
+              <MessageBubble
+                message={message}
+                isOwn={message.senderId === currentUser.id}
+                senderName={message.senderId === currentUser.id ? currentUser.name : otherUser.name}
+                senderAvatar={message.senderId === currentUser.id ? currentUser.avatar : otherUser.avatar}
+                isRead={readMessages.has(message.id)}
+                onImageClick={onImageClick}
+              />
+            </div>
           ))}
           
           {otherUserTyping && (
