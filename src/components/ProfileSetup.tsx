@@ -61,7 +61,14 @@ export const ProfileSetup: React.FC<ProfileSetupProps> = ({
     }
   };
 
-  const isComplete = user1.name.trim() && user2.name.trim();
+  // تحديث شرط التحقق - يجب أن يكون الاسم أكثر من 2 أحرف على الأقل
+  const isComplete = user1.name.trim().length >= 2 && user2.name.trim().length >= 2;
+
+  const handleCompleteClick = () => {
+    if (isComplete) {
+      onComplete();
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#075E54] to-[#128C7E] flex items-center justify-center p-4">
@@ -73,8 +80,8 @@ export const ProfileSetup: React.FC<ProfileSetupProps> = ({
 
         <div className="grid md:grid-cols-2 gap-6">
           {/* User 1 Setup */}
-          <Card className="shadow-xl bg-white/95 backdrop-blur-sm">
-            <CardHeader className="bg-gradient-to-r from-[#25D366] to-[#128C7E] text-white rounded-t-lg">
+          <Card className="shadow-xl bg-white/95 backdrop-blur-sm rounded-3xl">
+            <CardHeader className="bg-gradient-to-r from-[#25D366] to-[#128C7E] text-white rounded-t-3xl">
               <CardTitle className="text-center">Person 1 Profile</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4 p-6">
@@ -101,21 +108,25 @@ export const ProfileSetup: React.FC<ProfileSetupProps> = ({
                 </div>
               </div>
               <div>
-                <Label htmlFor="user1-name" className="text-gray-700 font-medium">Name/Nickname</Label>
+                <Label htmlFor="user1-name" className="text-gray-700 font-medium">Name/Nickname (minimum 2 characters)</Label>
                 <Input
                   id="user1-name"
                   value={user1.name}
                   onChange={(e) => setUser1({ ...user1, name: e.target.value })}
                   placeholder="Enter your name..."
                   className="mt-2 border-2 focus:border-[#25D366] rounded-lg"
+                  minLength={2}
                 />
+                {user1.name.length > 0 && user1.name.length < 2 && (
+                  <p className="text-red-500 text-sm mt-1">Name must be at least 2 characters</p>
+                )}
               </div>
             </CardContent>
           </Card>
 
           {/* User 2 Setup */}
-          <Card className="shadow-xl bg-white/95 backdrop-blur-sm">
-            <CardHeader className="bg-gradient-to-r from-[#25D366] to-[#128C7E] text-white rounded-t-lg">
+          <Card className="shadow-xl bg-white/95 backdrop-blur-sm rounded-3xl">
+            <CardHeader className="bg-gradient-to-r from-[#25D366] to-[#128C7E] text-white rounded-t-3xl">
               <CardTitle className="text-center">Person 2 Profile</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4 p-6">
@@ -142,14 +153,18 @@ export const ProfileSetup: React.FC<ProfileSetupProps> = ({
                 </div>
               </div>
               <div>
-                <Label htmlFor="user2-name" className="text-gray-700 font-medium">Name/Nickname</Label>
+                <Label htmlFor="user2-name" className="text-gray-700 font-medium">Name/Nickname (minimum 2 characters)</Label>
                 <Input
                   id="user2-name"
                   value={user2.name}
                   onChange={(e) => setUser2({ ...user2, name: e.target.value })}
                   placeholder="Enter your name..."
                   className="mt-2 border-2 focus:border-[#25D366] rounded-lg"
+                  minLength={2}
                 />
+                {user2.name.length > 0 && user2.name.length < 2 && (
+                  <p className="text-red-500 text-sm mt-1">Name must be at least 2 characters</p>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -157,7 +172,7 @@ export const ProfileSetup: React.FC<ProfileSetupProps> = ({
 
         {/* Avatar Selector */}
         {showAvatarSelector && (
-          <Card className="mt-6 shadow-xl animate-fade-in bg-white/95 backdrop-blur-sm">
+          <Card className="mt-6 shadow-xl animate-fade-in bg-white/95 backdrop-blur-sm rounded-3xl">
             <CardHeader>
               <CardTitle className="text-center text-gray-800">Choose an Avatar</CardTitle>
             </CardHeader>
@@ -176,7 +191,7 @@ export const ProfileSetup: React.FC<ProfileSetupProps> = ({
               </div>
               <Button
                 variant="outline"
-                className="w-full mt-4 border-2 hover:bg-gray-50"
+                className="w-full mt-4 border-2 hover:bg-gray-50 rounded-full"
                 onClick={() => setShowAvatarSelector(null)}
               >
                 Cancel
@@ -187,13 +202,16 @@ export const ProfileSetup: React.FC<ProfileSetupProps> = ({
 
         <div className="text-center mt-8">
           <Button
-            onClick={onComplete}
+            onClick={handleCompleteClick}
             disabled={!isComplete}
             size="lg"
             className="px-8 py-4 text-lg bg-gradient-to-r from-[#25D366] to-[#128C7E] hover:from-[#128C7E] hover:to-[#075E54] text-white font-semibold rounded-full shadow-lg transform transition-all hover:scale-105 disabled:opacity-50 disabled:transform-none"
           >
             Start Chatting 💬
           </Button>
+          {!isComplete && (
+            <p className="text-white/80 text-sm mt-2">Please complete both profiles with at least 2 characters each</p>
+          )}
         </div>
       </div>
     </div>

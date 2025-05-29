@@ -44,14 +44,14 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
 
     if (message.type === 'money') {
       return (
-        <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 border border-yellow-200 rounded-xl p-3 max-w-full">
+        <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 border border-yellow-200 rounded-3xl p-3 max-w-full">
           <div className="flex items-center gap-2 mb-3">
             <div className="w-8 h-8 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center">
               <span className="text-white text-sm font-bold">$</span>
             </div>
             <span className="font-semibold text-yellow-800">Money Transfer</span>
           </div>
-          <div className="bg-gradient-to-r from-green-400 to-green-600 text-white p-4 rounded-xl shadow-lg">
+          <div className="bg-gradient-to-r from-green-400 to-green-600 text-white p-4 rounded-3xl shadow-lg">
             <div className="text-3xl font-bold text-center">${message.amount}</div>
             <div className="text-sm opacity-90 text-center mt-1">
               Sent with love 💝
@@ -86,10 +86,10 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
         
         <div className="relative">
           <div
-            className={`px-4 py-2 rounded-2xl shadow-sm relative ${
+            className={`px-4 py-2 rounded-3xl shadow-sm relative ${
               isOwn
-                ? 'bg-[#DCF8C6] text-gray-800 rounded-br-md'
-                : 'bg-white border border-gray-200 text-gray-800 rounded-bl-md'
+                ? 'bg-[#DCF8C6] text-gray-800 rounded-br-lg'
+                : 'bg-white border border-gray-200 text-gray-800 rounded-bl-lg'
             } ${message.type === 'money' ? 'p-2' : ''}`}
           >
             {renderMessageContent()}
