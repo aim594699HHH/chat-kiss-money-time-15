@@ -39,6 +39,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const [chatBackground, setChatBackground] = useState<string>('');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [processedGiftMessages, setProcessedGiftMessages] = useState<Set<string>>(new Set());
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
@@ -53,6 +54,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     
     // Mark messages as read when they appear
     const newReadMessages = new Set(readMessages);
+    
     messages.forEach(message => {
       if (message.senderId !== currentUser.id) {
         newReadMessages.add(message.id);
@@ -60,9 +62,15 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
           onMessageRead(message.id);
         }
         
-        // Show animation for gifts received from other user
-        if (message.type === 'gift' && ['kiss', 'angry', 'laugh', 'heart'].includes(message.giftType || '')) {
-          // إعادة تعيين الأنيميشن لكل هدية جديدة
+        // Show animation for gifts received from other user - only once per message
+        if (message.type === 'gift' && 
+            ['kiss', 'angry', 'laugh', 'heart'].includes(message.giftType || '') &&
+            !processedGiftMessages.has(message.id)) {
+          
+          // Add message ID to processed gifts to prevent showing again
+          setProcessedGiftMessages(prev => new Set([...prev, message.id]));
+          
+          // Reset animation and show new one
           setGiftAnimation(null);
           setTimeout(() => {
             setGiftAnimation({ 
@@ -75,7 +83,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       }
     });
     setReadMessages(newReadMessages);
-  }, [messages, currentUser.id, onMessageRead, readMessages]);
+  }, [messages, currentUser.id, onMessageRead]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setInputText(e.target.value);
