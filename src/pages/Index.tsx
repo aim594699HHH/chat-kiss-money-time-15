@@ -1,10 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { ChatInterface } from '@/components/ChatInterface';
 import { ProfileSetup } from '@/components/ProfileSetup';
 import { BackgroundSelector } from '@/components/BackgroundSelector';
+import { MobileView } from '@/components/MobileView';
 import { Button } from '@/components/ui/button';
-import { Settings } from 'lucide-react';
+import { Settings, Smartphone } from 'lucide-react';
 
 export interface User {
   id: string;
@@ -34,6 +34,8 @@ const Index = () => {
   const [user1Typing, setUser1Typing] = useState(false);
   const [user2Typing, setUser2Typing] = useState(false);
   const [readMessages, setReadMessages] = useState<Set<string>>(new Set());
+  const [showMobileView, setShowMobileView] = useState(false);
+  const [mobileViewUser, setMobileViewUser] = useState<User | null>(null);
 
   const addMessage = (message: Omit<Message, 'id' | 'timestamp'>) => {
     const newMessage: Message = {
@@ -52,6 +54,11 @@ const Index = () => {
         msg.id === messageId ? { ...msg, isRead: true } : msg
       )
     );
+  };
+
+  const handleOpenMobileView = (user: User) => {
+    setMobileViewUser(user);
+    setShowMobileView(true);
   };
 
   const isSetupComplete = user1.name && user2.name;
@@ -131,7 +138,17 @@ const Index = () => {
 
         {/* Chat Grid - Full screen on mobile */}
         <div className="flex-1 grid grid-cols-1 xl:grid-cols-2 gap-2 md:gap-8 min-h-0">
-          <div className="min-h-0">
+          <div className="min-h-0 relative">
+            {/* Mobile View Button for User 1 */}
+            <Button
+              onClick={() => handleOpenMobileView(user1)}
+              variant="outline"
+              size="sm"
+              className="absolute top-2 right-2 z-10 bg-white/90 backdrop-blur-sm hover:bg-[#25D366] hover:text-white border-[#25D366] transition-colors"
+            >
+              <Smartphone className="w-4 h-4 mr-1" />
+              Mobile View
+            </Button>
             <ChatInterface
               currentUser={user1}
               otherUser={user2}
@@ -143,7 +160,17 @@ const Index = () => {
               onMessageRead={handleMessageRead}
             />
           </div>
-          <div className="min-h-0 hidden xl:block">
+          <div className="min-h-0 hidden xl:block relative">
+            {/* Mobile View Button for User 2 */}
+            <Button
+              onClick={() => handleOpenMobileView(user2)}
+              variant="outline"
+              size="sm"
+              className="absolute top-2 right-2 z-10 bg-white/90 backdrop-blur-sm hover:bg-[#25D366] hover:text-white border-[#25D366] transition-colors"
+            >
+              <Smartphone className="w-4 h-4 mr-1" />
+              Mobile View
+            </Button>
             <ChatInterface
               currentUser={user2}
               otherUser={user1}
@@ -157,6 +184,20 @@ const Index = () => {
           </div>
         </div>
       </div>
+
+      {/* Mobile View Modal */}
+      {showMobileView && mobileViewUser && (
+        <MobileView
+          currentUser={mobileViewUser}
+          otherUser={mobileViewUser.id === user1.id ? user2 : user1}
+          messages={messages}
+          onSendMessage={addMessage}
+          onTyping={mobileViewUser.id === user1.id ? setUser1Typing : setUser2Typing}
+          otherUserTyping={mobileViewUser.id === user1.id ? user2Typing : user1Typing}
+          onMessageRead={handleMessageRead}
+          onClose={() => setShowMobileView(false)}
+        />
+      )}
     </div>
   );
 };
