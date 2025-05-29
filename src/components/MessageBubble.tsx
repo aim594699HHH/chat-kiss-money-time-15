@@ -52,7 +52,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
       
       return (
         <div className="flex items-center gap-2">
-          <span className="text-3xl animate-bounce">
+          <span className="text-2xl">
             {emojiMap[message.giftType as keyof typeof emojiMap] || '💋'}
           </span>
           <span className="font-medium">{message.text}</span>
