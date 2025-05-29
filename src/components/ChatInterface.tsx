@@ -1,15 +1,13 @@
+
 import React, { useState, useRef, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { MessageBubble } from './MessageBubble';
+import { Card, CardContent } from '@/components/ui/card';
+import { ChatHeader } from './ChatHeader';
+import { MessagesArea } from './MessagesArea';
+import { ChatInput } from './ChatInput';
 import { GiftSelector } from './GiftSelector';
 import { GiftAnimation } from './GiftAnimation';
 import { ImageViewer } from './ImageViewer';
 import { User, Message } from '@/pages/Index';
-import { Send, Gift, Image, X, Video, Phone } from 'lucide-react';
 
 interface ChatInterfaceProps {
   currentUser: User;
@@ -43,7 +41,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
-  const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -227,134 +224,35 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     setGiftAnimation(null);
   };
 
+  const handleToggleGifts = () => {
+    setShowGifts(!showGifts);
+  };
+
   return (
     <div className="relative">
       <Card className="h-[700px] flex flex-col shadow-xl bg-white border-0 rounded-3xl overflow-hidden">
-        {/* Header - Fixed at top */}
-        <CardHeader className="bg-[#075E54] text-white p-4 rounded-t-3xl flex-shrink-0 sticky top-0 z-10">
-          <CardTitle className="flex items-center gap-3 justify-between">
-            <div className="flex items-center gap-3">
-              <Avatar className="w-12 h-12 ring-2 ring-white">
-                <AvatarImage src={otherUser.avatar} alt={otherUser.name} />
-                <AvatarFallback className="bg-gray-300 text-gray-700 font-semibold">
-                  {otherUser.name.charAt(0)}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex-1">
-                <div className="font-semibold text-lg">{otherUser.name}</div>
-                <div className="text-sm opacity-90">
-                  {otherUserTyping ? (
-                    <span className="flex items-center gap-1">
-                      typing
-                      <div className="flex gap-1">
-                        <div className="w-1 h-1 bg-white rounded-full animate-bounce"></div>
-                        <div className="w-1 h-1 bg-white rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                        <div className="w-1 h-1 bg-white rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                      </div>
-                    </span>
-                  ) : 'online'}
-                </div>
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleVoiceCall}
-                className="p-2 hover:bg-white/10 rounded-full transition-colors"
-              >
-                <Phone className="w-5 h-5" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleVideoCall}
-                className="p-2 hover:bg-white/10 rounded-full transition-colors"
-              >
-                <Video className="w-5 h-5" />
-              </Button>
-              <label className="cursor-pointer p-2 hover:bg-white/10 rounded-full transition-colors">
-                <Image className="w-5 h-5" />
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleBackgroundUpload}
-                  className="hidden"
-                />
-              </label>
-              {chatBackground && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={removeChatBackground}
-                  className="p-2 hover:bg-white/10 rounded-full"
-                >
-                  <X className="w-5 h-5" />
-                </Button>
-              )}
-            </div>
-          </CardTitle>
-        </CardHeader>
+        <ChatHeader
+          otherUser={otherUser}
+          otherUserTyping={otherUserTyping}
+          onVideoCall={handleVideoCall}
+          onVoiceCall={handleVoiceCall}
+          onBackgroundUpload={handleBackgroundUpload}
+          onRemoveBackground={removeChatBackground}
+          chatBackground={chatBackground}
+        />
 
         <CardContent className="flex-1 flex flex-col p-0 relative overflow-hidden">
-          {/* Messages Area with proper ScrollArea */}
-          <div className="flex-1 relative">
-            <ScrollArea className="h-full">
-              <div 
-                className="space-y-1 min-h-full p-4 rounded-2xl"
-                style={{
-                  backgroundColor: chatBackground ? 'transparent' : '#E5DDD5',
-                  backgroundImage: chatBackground 
-                    ? `linear-gradient(rgba(229, 221, 213, 0.8), rgba(229, 221, 213, 0.8)), url(${chatBackground})`
-                    : `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23f0f0f0' fill-opacity='0.05'%3E%3Cpath d='M30 30c0-11.046-8.954-20-20-20s-20 8.954-20 20 8.954 20 20 20 20-8.954 20-20zm0 0c0 11.046 8.954 20 20 20s20-8.954 20-20-8.954-20-20-20-20 8.954-20 20z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-                  backgroundSize: chatBackground ? 'cover' : '60px 60px',
-                  backgroundPosition: 'center',
-                  backgroundRepeat: chatBackground ? 'no-repeat' : 'repeat'
-                }}
-              >
-                {messages.map((message) => (
-                  <MessageBubble
-                    key={message.id}
-                    message={message}
-                    isOwn={message.senderId === currentUser.id}
-                    senderName={message.senderId === currentUser.id ? currentUser.name : otherUser.name}
-                    senderAvatar={message.senderId === currentUser.id ? currentUser.avatar : otherUser.avatar}
-                    isRead={readMessages.has(message.id)}
-                    onImageClick={setSelectedImage}
-                  />
-                ))}
-                
-                {otherUserTyping && (
-                  <div className="flex items-center gap-2 animate-fade-in mb-4">
-                    <Avatar className="w-8 h-8">
-                      <AvatarImage src={otherUser.avatar} alt={otherUser.name} />
-                      <AvatarFallback className="text-xs bg-gray-300">{otherUser.name.charAt(0)}</AvatarFallback>
-                    </Avatar>
-                    <div className="bg-white rounded-2xl px-4 py-3 shadow-sm border border-gray-200">
-                      <div className="flex gap-1">
-                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-                
-                {isUploading && (
-                  <div className="flex justify-end mb-4">
-                    <div className="bg-[#DCF8C6] rounded-2xl px-4 py-3 shadow-sm">
-                      <div className="flex items-center gap-2">
-                        <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
-                        <span className="text-sm text-gray-600">Uploading image...</span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-                
-                <div ref={messagesEndRef} />
-              </div>
-            </ScrollArea>
-          </div>
+          <MessagesArea
+            messages={messages}
+            currentUser={currentUser}
+            otherUser={otherUser}
+            otherUserTyping={otherUserTyping}
+            readMessages={readMessages}
+            chatBackground={chatBackground}
+            isUploading={isUploading}
+            messagesEndRef={messagesEndRef}
+            onImageClick={setSelectedImage}
+          />
 
           {/* Gift Selector */}
           {showGifts && (
@@ -366,48 +264,15 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
             </div>
           )}
 
-          {/* Input Area - Fixed at bottom */}
-          <div className="p-4 bg-[#F0F0F0] border-t border-gray-200 rounded-b-3xl flex-shrink-0">
-            <div className="flex gap-3 items-end relative">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowGifts(!showGifts)}
-                className="rounded-full w-12 h-12 p-0 text-gray-600 hover:bg-gray-200 flex-shrink-0"
-              >
-                <Gift className="w-6 h-6" />
-              </Button>
-              
-              <label className="cursor-pointer rounded-full w-12 h-12 p-0 text-gray-600 hover:bg-gray-200 flex-shrink-0 flex items-center justify-center">
-                <Image className="w-6 h-6" />
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  className="hidden"
-                />
-              </label>
-              
-              <div className="flex-1 relative">
-                <Input
-                  ref={inputRef}
-                  value={inputText}
-                  onChange={handleInputChange}
-                  onKeyPress={handleKeyPress}
-                  placeholder="Type a message"
-                  className="rounded-full border-0 bg-white shadow-sm pr-16 py-3 px-4 focus:ring-2 focus:ring-[#25D366] text-base"
-                />
-                <Button
-                  onClick={handleSendMessage}
-                  disabled={!inputText.trim()}
-                  size="sm"
-                  className="absolute right-2 top-1/2 transform -translate-y-1/2 rounded-full w-10 h-10 p-0 bg-[#25D366] hover:bg-[#128C7E] disabled:bg-gray-300 transition-colors z-10"
-                >
-                  <Send className="w-5 h-5" />
-                </Button>
-              </div>
-            </div>
-          </div>
+          <ChatInput
+            inputText={inputText}
+            onInputChange={handleInputChange}
+            onSendMessage={handleSendMessage}
+            onKeyPress={handleKeyPress}
+            onToggleGifts={handleToggleGifts}
+            onImageUpload={handleImageUpload}
+            inputRef={inputRef}
+          />
         </CardContent>
       </Card>
 
